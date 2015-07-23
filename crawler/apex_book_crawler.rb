@@ -99,7 +99,7 @@ class ApexBookCrawler
         author: author,
         isbn: isbn,
         invalid_isbn: invalid_isbn,
-        price: price,
+        original_price: price,
         known_supplier: 'apex'
       }
 

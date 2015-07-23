@@ -2,7 +2,7 @@ require 'crawler_rocks'
 require 'pry'
 require 'json'
 require 'iconv'
-require 'isbn'
+require 'book_toolkit'
 
 require 'thread'
 require 'thwait'
@@ -75,10 +75,11 @@ class ApexBookCrawler
       name_datas = datas[2].text.gsub(/\s{4,}/, "\n").strip
       name = name_datas.rpartition("\n")[0].gsub(/\w+/, &:capitalize)
 
-      isbn = nil;
+      isbn = nil; invalid_isbn = nil;
       begin
-        isbn = isbn_to_13(name_datas.rpartition("\n")[-1].rpartition(':')[-1])
+        isbn = BookToolkit.to_isbn13(name_datas.rpartition("\n")[-1].rpartition(':')[-1])
       rescue Exception => e
+        invalid_isbn = name_datas.rpartition("\n")[-1].rpartition(':')[-1]
       end
 
       url = nil || datas[2].xpath('a/@href').to_s.strip
@@ -92,7 +93,9 @@ class ApexBookCrawler
         url: url,
         author: author,
         isbn: isbn,
-        price: price
+        invalid_isbn: invalid_isbn,
+        price: price,
+        known_supplier: 'apex'
       }
 
       sleep(1) until (
@@ -114,38 +117,6 @@ class ApexBookCrawler
 
     ThreadsWait.all_waits(*detail_threads)
   end
-
-  def isbn_to_13 isbn
-    case isbn.length
-    when 13
-      return ISBN.thirteen isbn
-    when 10
-      return ISBN.thirteen isbn
-    when 12
-      return "#{isbn}#{isbn_checksum(isbn)}"
-    when 9
-      return ISBN.thirteen("#{isbn}#{isbn_checksum(isbn)}")
-    end
-  end
-
-  def isbn_checksum(isbn)
-    isbn.gsub!(/[^(\d|X)]/, '')
-    c = 0
-    if isbn.length <= 10
-      10.downto(2) {|i| c += isbn[10-i].to_i * i}
-      c %= 11
-      c = 11 - c
-      c ='X' if c == 10
-      return c
-    elsif isbn.length <= 13
-      (1..11).step(2) {|i| c += isbn[i].to_i}
-      c *= 3
-      (0..11).step(2) {|i| c += isbn[i].to_i}
-      c = (220-c) % 10
-      return c
-    end
-  end
-
 
 end
 

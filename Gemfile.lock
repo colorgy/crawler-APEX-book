@@ -1,6 +1,10 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    book_toolkit (0.0.1)
+      hashie (~> 3.4.2)
+      httpclient (~> 2.6.0.1)
+      isbn (~> 2.0.10)
     coderay (1.1.0)
     crawler_rocks (0.0.5)
       curb (~> 0.8, >= 0.8.8)
@@ -9,8 +13,10 @@ GEM
     curb (0.8.8)
     domain_name (0.5.24)
       unf (>= 0.0.5, < 1.0.0)
+    hashie (3.4.2)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
+    httpclient (2.6.0.1)
     iconv (1.0.4)
     isbn (2.0.10)
     method_source (0.8.2)
@@ -36,7 +42,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  book_toolkit (~> 0.0.1)
   crawler_rocks
   iconv
-  isbn
   pry

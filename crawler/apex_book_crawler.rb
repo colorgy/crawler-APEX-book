@@ -15,7 +15,10 @@ class ApexBookCrawler
     "出版商" => :publisher,
   }
 
-  def initialize
+  def initialize update_progress: nil, after_each: nil
+    @update_progress_proc = update_progress
+    @after_each_proc = after_each
+
     @index_url = "http://www.apexbook.tw/index.php"
     @ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
   end
@@ -23,6 +26,7 @@ class ApexBookCrawler
   def books
     @books = {}
     threads = []
+    @after_each_threads = []
     @cookies = nil
 
     r = RestClient.get("#{@index_url}?php_mode=advancesearch") do |response, request, result, &block|
@@ -61,6 +65,7 @@ class ApexBookCrawler
       end # end thread
     end
     ThreadsWait.all_waits(*threads)
+    ThreadsWait.all_waits(*@after_each_threads)
 
     @books.values
   end
@@ -111,7 +116,15 @@ class ApexBookCrawler
           key, colon, value = attr_data.rpartition(/[：:]/)
           @books[isbn][ATTR_HASH[key]] = value.strip unless key.nil? || ATTR_HASH[key].nil?
         }
-        print "|"
+
+        sleep(1) until (
+          @after_each_threads.delete_if { |t| !t.status };  # remove dead (ended) threads
+          @after_each_threads.count < (ENV['MAX_THREADS'] || 30)
+        )
+        @after_each_threads << Thread.new do
+          @after_each_proc.call(book: @books[isbn]) if @after_each_proc
+        end
+        # print "|"
       end # end detail_thread
     end # end each row
 
@@ -120,5 +133,5 @@ class ApexBookCrawler
 
 end
 
-cc = ApexBookCrawler.new
-File.write('apex_books.json', JSON.pretty_generate(cc.books))
+# cc = ApexBookCrawler.new
+# File.write('apex_books.json', JSON.pretty_generate(cc.books))
